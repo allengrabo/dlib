@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Dashboard: The Comb & The Flower</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Merriweather', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        stone: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                            200: '#e7e5e4',
+                            300: '#d6d3d1',
+                            700: '#44403c',
+                            800: '#292524',
+                            900: '#1c1917',
+                        },
+                        amber: {
+                            700: '#b45309',
+                            800: '#92400e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #fafaf9;
+            color: #292524;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            min-height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5f5f4;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 6px;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background-color: #b45309;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(28, 25, 23, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+        }
+        .modal-overlay.active {
+            display: block;
+        }
+        
+        .report-table th {
+            text-align: left;
+            padding: 0.75rem;
+            background-color: #f5f5f4;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #78716c;
+            border-bottom: 2px solid #e7e5e4;
+        }
+        .report-table td {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e7e5e4;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-amber-200 selection:text-amber-900">
+
+    <!-- Chosen Palette: Warm Neutrals (Stone) with Amber accents. -->
+    
+    <!-- Application Structure Plan: 
+         - Hero Section: Core thesis.
+         - Narrative Arc: Chart.js line graph + beat sheet.
+         - Visual Production Report (Expanded): Clickable category cards that open deep-dive modals containing the full technical sourcing report details, historical context, and NARA guides.
+         - Curriculum Suite: Tabbed interface for 4 lesson plans.
+    -->
+
+    <!-- Visualization & Content Choices: 
+         - Goal: Show emotional pacing -> Line Chart (Chart.js).
+         - Goal: Organize Visual Sourcing -> Card Grid -> Interactive Modals (JS).
+         - Goal: Technical Rigor -> Detailed Data Tables (HTML/CSS) within modals for NARA IDs, material specs, and landmarks.
+    -->
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-stone-50/90 backdrop-blur-md border-b border-stone-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center gap-4">
+                <div class="flex-shrink-0 font-serif font-bold text-xl tracking-tight text-stone-900">
+                    <span class="text-amber-700">&#10050;</span> ETERNAL SALUTE
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#overview" class="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Overview</a>
+                    <a href="#narrative" class="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Narrative Arc</a>
+                    <a href="#visuals" class="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Visual Report</a>
+                    <a href="#curriculum" class="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Curriculum</a>
+                </div>
+            </div>
+            <div class="md:hidden pb-4 flex flex-wrap gap-3 text-sm font-medium text-stone-600">
+                <a href="#overview" class="hover:text-amber-700 transition-colors">Overview</a>
+                <a href="#narrative" class="hover:text-amber-700 transition-colors">Narrative Arc</a>
+                <a href="#visuals" class="hover:text-amber-700 transition-colors">Visual Report</a>
+                <a href="#curriculum" class="hover:text-amber-700 transition-colors">Curriculum</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="overview" class="py-20 bg-stone-100 border-b border-stone-200">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-amber-700 font-semibold tracking-widest uppercase text-sm mb-4">Production & Curriculum Master Guide</p>
+            <h1 class="text-4xl md:text-5xl font-serif font-bold text-stone-900 mb-6 leading-tight">
+                The Comb and the Flower
+            </h1>
+            <h2 class="text-xl md:text-2xl text-stone-600 font-light mb-8 font-serif italic">
+                Otis Brandon’s Quiet Acts of Humanity in the Pacific War
+            </h2>
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-stone-200 text-left">
+                <p class="text-lg text-stone-700 leading-relaxed mb-4">
+                    <strong class="font-semibold text-stone-900">Logline:</strong> A WWII veteran remembers that even in the aftermath of violence, a person still has choices. Through two small acts of compassion—giving food to hungry girls in Yokohama and placing a hand-drawn flower with the dead—Otis reveals a lesson larger than war: do not let brutality decide who you become.
+                </p>
+                <p class="text-stone-600 leading-relaxed italic">
+                    "War is geography and guns, but humanity is a choice. True victory is refusing to lose your soul."
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Section: Narrative Arc -->
+    <section id="narrative" class="py-16 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-12 text-center max-w-3xl mx-auto">
+                <h3 class="text-3xl font-serif font-bold text-stone-900 mb-4">The Narrative Arc</h3>
+                <p class="text-stone-600">
+                    The emotional and structural spine of the 8-12 minute short. The pacing deliberately contrasts the high-tension machinery of war with quiet, intimate moments of humanity.
+                </p>
+            </div>
+
+            <div class="mb-16">
+                <h4 class="text-lg font-semibold text-stone-800 mb-2 text-center">Emotional Resonance Mapping</h4>
+                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 shadow-inner">
+                    <div class="chart-container">
+                        <canvas id="arcChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h4 class="text-2xl font-serif font-bold text-stone-900 mb-6 border-b border-stone-200 pb-2">Director's Beat Sheet</h4>
+                    <div class="relative border-l border-stone-300 ml-3 pl-6 space-y-8">
+                        <div class="timeline-item relative">
+                            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">0:00 - 1:10</span>
+                            <h5 class="text-lg font-bold text-stone-800">The Hook & Identity</h5>
+                            <p class="text-stone-600 text-sm mt-1">Bonnie & Clyde anecdote. Establishes Otis as vivid and undeniably human before the Pacific material arrives.</p>
+                        </div>
+                        <div class="timeline-item relative">
+                            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">1:10 - 2:35</span>
+                            <h5 class="text-lg font-bold text-stone-800">The Machinery of War</h5>
+                            <p class="text-stone-600 text-sm mt-1">Pacific context. Island-hopping, bitterness, and the moral pressure cooker of occupied Yokohama.</p>
+                        </div>
+                        <div class="timeline-item relative">
+                            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">2:35 - 3:45</span>
+                            <h5 class="text-lg font-bold text-stone-800">First Moral Act: The Comb</h5>
+                            <p class="text-stone-600 text-sm mt-1">Defying orders to share rations. The gift of the comb. An emotional summit focusing on remembered kindness.</p>
+                        </div>
+                        <div class="timeline-item relative">
+                            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">5:20 - 6:30</span>
+                            <h5 class="text-lg font-bold text-stone-800">Second Moral Act: The Flower</h5>
+                            <p class="text-stone-600 text-sm mt-1">Drawing the rose for the body bag. The emotional keystone: "I respect the dead."</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-stone-100 p-8 rounded-xl border border-stone-200 flex flex-col justify-center">
+                    <h4 class="text-xl font-serif font-bold text-stone-900 mb-4">Editorial Guidance</h4>
+                    <p class="text-stone-700 mb-6 font-serif italic">
+                        "True victory is refusing to lose your soul. A comb and a paper rose can echo for eighty years."
+                    </p>
+                    <ul class="space-y-3 text-stone-600">
+                        <li class="flex items-start"><span class="mr-2 text-amber-700">&#10003;</span> <span><strong>Avoid:</strong> Generic battlefield thunder. Over-cutting.</span></li>
+                        <li class="flex items-start"><span class="mr-2 text-amber-700">&#10003;</span> <span><strong>Emphasize:</strong> Patient interview framing, hands, and eyes.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Visual Strategy (Production Report Explorer) -->
+    <section id="visuals" class="py-16 bg-stone-800 text-stone-100">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-12 text-center max-w-3xl mx-auto">
+                <h3 class="text-3xl font-serif font-bold text-white mb-4">Visual Production Report</h3>
+                <p class="text-stone-300">
+                    A comprehensive guide for sourcing B-roll that maintains the film's emotional weight. Click each card to explore technical history, archival methodology, and material specifications.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <button onclick="openModal('modal-yokohama')" class="text-left bg-stone-700 rounded-lg p-6 border border-stone-600 hover:border-amber-600 hover:bg-stone-600 transition-all group">
+                    <div class="text-amber-500 text-2xl mb-3 group-hover:scale-110 transition-transform">&#127960;</div>
+                    <h5 class="text-lg font-bold text-white mb-2 underline decoration-amber-500/30">Yokohama Occupation</h5>
+                    <p class="text-sm text-stone-300 mb-4 italic">Urban textures of the psychological landscape.</p>
+                    <span class="text-xs text-amber-400 font-bold uppercase tracking-widest">View Detailed Report &rarr;</span>
+                </button>
+
+                <button onclick="openModal('modal-comb')" class="text-left bg-stone-700 rounded-lg p-6 border border-stone-600 hover:border-amber-600 hover:bg-stone-600 transition-all group">
+                    <div class="text-amber-500 text-2xl mb-3 group-hover:scale-110 transition-transform">&#128172;</div>
+                    <h5 class="text-lg font-bold text-white mb-2 underline decoration-amber-500/30">The Materiality: Comb</h5>
+                    <p class="text-sm text-stone-300 mb-4 italic">The kushi and kogai as vessels of dignity.</p>
+                    <span class="text-xs text-amber-400 font-bold uppercase tracking-widest">View Detailed Report &rarr;</span>
+                </button>
+
+                <button onclick="openModal('modal-flower')" class="text-left bg-stone-700 rounded-lg p-6 border border-stone-600 hover:border-amber-600 hover:bg-stone-600 transition-all group">
+                    <div class="text-amber-500 text-2xl mb-3 group-hover:scale-110 transition-transform">&#9999;</div>
+                    <h5 class="text-lg font-bold text-white mb-2 underline decoration-amber-500/30">Infrastructure & Sanctity</h5>
+                    <p class="text-sm text-stone-300 mb-4 italic">The Fumikiri tragedy and the M-1945 bag.</p>
+                    <span class="text-xs text-amber-400 font-bold uppercase tracking-widest">View Detailed Report &rarr;</span>
+                </button>
+
+                <button onclick="openModal('modal-alabama')" class="text-left bg-stone-700 rounded-lg p-6 border border-stone-600 hover:border-amber-600 hover:bg-stone-600 transition-all group">
+                    <div class="text-amber-500 text-2xl mb-3 group-hover:scale-110 transition-transform">&#127795;</div>
+                    <h5 class="text-lg font-bold text-white mb-2 underline decoration-amber-500/30">Alabama Resilience</h5>
+                    <p class="text-sm text-stone-300 mb-4 italic">Southern domesticity and the texture of peace.</p>
+                    <span class="text-xs text-amber-400 font-bold uppercase tracking-widest">View Detailed Report &rarr;</span>
+                </button>
+            </div>
+
+            <div class="mt-12 p-8 bg-stone-900 rounded-xl border border-stone-700 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h4 class="text-xl font-bold text-white">Production Workflow & NARA Identifiers</h4>
+                    <p class="text-stone-400 text-sm mt-1">Technical blueprint linking search terms to narrative beats.</p>
+                </div>
+                <button onclick="openModal('modal-workflow')" class="px-8 py-3 bg-amber-700 hover:bg-amber-600 text-white rounded font-bold transition-colors">Open Master Blueprint</button>
+            </div>
+        </div>
+    </section>
+
+    <div id="modal-yokohama" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="max-w-4xl mx-auto bg-white text-stone-800 p-8 rounded-xl shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-900 text-2xl" aria-label="Close modal">&times;</button>
+            <h2 class="text-3xl font-serif font-bold text-stone-900 mb-4 border-b pb-4">Urban Texture: Occupied Yokohama (1945–1946)</h2>
+            <div class="prose max-w-none text-stone-600 mb-8">
+                <p class="mb-4">The port city of Yokohama provides a specific visual geography for the film. In 1945, the city was a hub of logistical activity, where coalier barges unloaded fuel in sling-carried baskets and large cranes dominated the harbor basin. Amidst this industrial backdrop, civilians lived in makeshift shelters and traveled on wood-powered gas generator buses—the "wood-burners"—a critical visual detail representing ingenuity born of desperation.</p>
+                <h3 class="text-xl font-bold text-stone-900 mb-4">Architectural and Social Landmarks</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full report-table mb-6">
+                        <thead>
+                            <tr>
+                                <th>Landmark</th>
+                                <th>Historical Significance</th>
+                                <th>Recommended Search Term</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold">Nozawaya Dept. Store</td>
+                                <td>Few major buildings to survive; served as an occupier landmark.</td>
+                                <td class="font-mono text-xs">"Yokohama Nozawaya Dept. Store 1945"</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">YMCA (Chamber of Commerce)</td>
+                                <td>Occupied by Allied administration.</td>
+                                <td class="font-mono text-xs">"Yokohama YMCA occupation 1945"</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Haneda Airport</td>
+                                <td>Maintained by 836th Engineer Aviation Battalion; point of arrival.</td>
+                                <td class="font-mono text-xs">"Haneda airport 1945 archival"</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Imperial Palace Guards</td>
+                                <td>Guard booths with 1st Cavalry insignia; new authority.</td>
+                                <td class="font-mono text-xs">"1st Cavalry guard booth Imperial Palace"</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p><strong>Demographic Shifts:</strong> Footage should include demobilized IJA soldiers in tattered uniforms alongside "slick salarymen" and families, capturing the bitterness and suspicion that Otis chose to counter with compassion.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-comb" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="max-w-4xl mx-auto bg-white text-stone-800 p-8 rounded-xl shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-900 text-2xl" aria-label="Close modal">&times;</button>
+            <h2 class="text-3xl font-serif font-bold text-stone-900 mb-4 border-b pb-4">Materiality of Gratitude: The Kushi and Kogai</h2>
+            <div class="prose max-w-none text-stone-600 mb-8">
+                <p class="mb-4">The gift of a hair comb from a young Japanese girl to Otis Brandon is the emotional center of the film. This object, which Otis has kept for eighty years, represents a "transfer of dignity" and a commitment to memory: <em>"I'll remember you, and you remember me."</em></p>
+                <h3 class="text-xl font-bold text-stone-900 mb-4">Technical Analysis of Showa-Era Ornaments</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full report-table mb-6">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Visual Detail</th>
+                                <th>Sourcing Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold">Celluloid (Faux Shell)</td>
+                                <td>Translucent, amber plastic; fine surface scratches from 80 years of use.</td>
+                                <td>Macro shots with backlighting to show the material’s glow.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Makie (Gold Lacquer)</td>
+                                <td>Decorative gold powder depicting cranes, chrysanthemums, or blossoms.</td>
+                                <td class="font-mono text-xs">"vintage Japanese hair comb gold lacquer"</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Aogai (Abalone)</td>
+                                <td>Iridescent shell inlays enhancing floral designs on the kushi.</td>
+                                <td>Macro photography to capture iridescent color shifts.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Artist Signature</td>
+                                <td>Often found in gold lacquer on the side or reverse.</td>
+                                <td>Close-up reveal to add a sense of the object’s personal history.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p><strong>Symbolic Filming:</strong> The "Eternal Salute" style requires slow, tactile shots. Hands turning the comb in natural window light allows the gold lacquer to catch the eye. This creates a powerful contrast with the "machinery of war."</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-flower" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="max-w-4xl mx-auto bg-white text-stone-800 p-8 rounded-xl shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-900 text-2xl" aria-label="Close modal">&times;</button>
+            <h2 class="text-3xl font-serif font-bold text-stone-900 mb-4 border-b pb-4">Infrastructure & The Sanctity of the Dead</h2>
+            <div class="prose max-w-none text-stone-600 mb-8">
+                <p class="mb-4">The second act involves the death of a young girl at a railroad crossing—a <em>fumikiri</em>. Otis's decision to place a hand-drawn rose in her body bag perfectly encapsulates "moral survival."</p>
+                <h3 class="text-xl font-bold text-stone-900 mb-4">Fumikiri: Railroad Infrastructure Motifs</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full report-table mb-6">
+                        <thead>
+                            <tr>
+                                <th>Element</th>
+                                <th>Historical Detail</th>
+                                <th>Visual Motif for B-Roll</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold">Manual Barrier Arm</td>
+                                <td>Wooden or metal arms operated by a weighted converter.</td>
+                                <td>Slow lowering of the gate as a train approaches.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Fumikiri-ban (Guard)</td>
+                                <td>Tattered uniforms; white flags signaling the tracks were "passable."</td>
+                                <td>Distant shot of a guard by a small railway booth.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">M-1945 Lower Cargo Bag</td>
+                                <td>Heavy-duty olive drab canvas with rubberized waterproof liner.</td>
+                                <td>Hand slipping a paper note into the stiff, dark interior.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Field Notebook</td>
+                                <td>Standard 1940s-style spiral notebook used by combat artists.</td>
+                                <td>Pencil drawing a rose on lined intelligence paper.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-alabama" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="max-w-4xl mx-auto bg-white text-stone-800 p-8 rounded-xl shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-900 text-2xl" aria-label="Close modal">&times;</button>
+            <h2 class="text-3xl font-serif font-bold text-stone-900 mb-4 border-b pb-4">Alabama Resilience: The Texture of Peace</h2>
+            <div class="prose max-w-none text-stone-600 mb-8">
+                <p class="mb-4">Visualizing Otis's post-war life involves the specific domestic textures of the American South in the late 1940s and 1950s. This creates a contrast between ruins and renewal.</p>
+                <h3 class="text-xl font-bold text-stone-900 mb-4">Post-War Alabama Motifs</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full report-table mb-6">
+                        <thead>
+                            <tr>
+                                <th>Visual Motif</th>
+                                <th>Description / Historical Context</th>
+                                <th>Sourcing Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold">The Southern Church</td>
+                                <td>Wooden clapboard churches like Sweet Gum A.M.E. Zion.</td>
+                                <td>Footage Farm "Alabama Church".</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Sharecropper Life</td>
+                                <td>Families on porches; clothes on a line; children playing.</td>
+                                <td>Shutterstock "Life Rural Alabama 1946".</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Tuskegee Institute</td>
+                                <td>Mechanical drawing classes or Army Air Corps cadets training.</td>
+                                <td>Getty "African American 1940".</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Mid-Century Gardens</td>
+                                <td>Skylines through hardwood forests; honeysuckle vines.</td>
+                                <td>Birmingham Hist. Society.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="italic text-sm">Parallels: A shot of a wood-powered bus in Yokohama transitioning to a mule-drawn wagon in Alabama highlights the shared struggle for survival regardless of geography.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-workflow" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="max-w-6xl mx-auto bg-white text-stone-800 p-8 rounded-xl shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-900 text-2xl" aria-label="Close modal">&times;</button>
+            <h2 class="text-3xl font-serif font-bold text-stone-900 mb-6 border-b pb-4 text-center">Master Production Workflow & Blueprint</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div>
+                    <h3 class="font-bold text-lg mb-4 text-amber-800">Visual Assembly Blueprint</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full report-table">
+                            <thead>
+                                <tr>
+                                    <th>Story Beat</th>
+                                    <th>Search Terms</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1. Opening Climate</td><td class="text-xs">"1945 Yokohama postwar occupation streets"</td></tr>
+                                <tr><td>2. The Context</td><td class="text-xs">"1st Cavalry Division occupation Tokyo archival"</td></tr>
+                                <tr><td>3. The First Act</td><td class="text-xs">"1945 occupied Japan soldier feeding children"</td></tr>
+                                <tr><td>4. The Object</td><td class="text-xs">"vintage Japanese hair comb window light"</td></tr>
+                                <tr><td>5. Second Act</td><td class="text-xs">"1945 Japan railroad crossing fumikiri"</td></tr>
+                                <tr><td>6. The Gesture</td><td class="text-xs">"hand drawing rose pencil notebook sketch"</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4 text-amber-800">Signal Corps & NARA Identifiers</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full report-table">
+                            <thead>
+                                <tr>
+                                    <th>NARA ID</th>
+                                    <th>Description</th>
+                                    <th>Production Use</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="font-mono">142663482</td><td>Surrender on USS Missouri.</td><td>Formal end of war.</td></tr>
+                                <tr><td class="font-mono">531271</td><td>Starved prisoners (Ebensee).</td><td>Tragedy Otis witnessed.</td></tr>
+                                <tr><td class="font-mono">531256</td><td>Captured German railroad gun.</td><td>Scale of hardware.</td></tr>
+                                <tr><td class="font-mono">RG 331, B47</td><td>Occupational records.</td><td>Yokohama logistics.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-stone-100 p-6 rounded-lg">
+                <h3 class="font-bold mb-2">Deep Narrative Analysis: Third-Order Insights</h3>
+                <p class="text-sm text-stone-600 mb-4">Otis's decision represents a refusal to succumb to "moral injury"—the psychological distress from violating held moral beliefs. The visual contrast between the "body bag" and the "Alabama garden" illustrates the lifelong commitment required to maintain one's soul in the aftermath of violence.</p>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="p-3 bg-white rounded border border-stone-200"><span class="block font-bold text-amber-800 text-xl">The Comb</span> <span class="text-xs uppercase tracking-tighter">Vessel of Memory</span></div>
+                    <div class="p-3 bg-white rounded border border-stone-200"><span class="block font-bold text-amber-800 text-xl">The Flower</span> <span class="text-xs uppercase tracking-tighter">Vessel of Ethics</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section id="curriculum" class="py-16 bg-stone-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-12 text-center max-w-3xl mx-auto">
+                <h3 class="text-3xl font-serif font-bold text-stone-900 mb-4">Educational Curriculum Suite</h3>
+                <p class="text-stone-600">Four distinct, trauma-informed lesson modules designed to pair with the documentary.</p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 mb-8">
+                <button onclick="switchTab('tab-core')" id="btn-tab-core" class="px-6 py-2 rounded-full font-medium text-sm transition-all duration-200 bg-amber-700 text-white shadow-md">Core: Dignity in Wartime</button>
+                <button onclick="switchTab('tab-ela')" id="btn-tab-ela" class="px-6 py-2 rounded-full font-medium text-sm transition-all duration-200 bg-white text-stone-600 border border-stone-300 hover:bg-stone-100">ELA: Choices Remain</button>
+                <button onclick="switchTab('tab-sel')" id="btn-tab-sel" class="px-6 py-2 rounded-full font-medium text-sm transition-all duration-200 bg-white text-stone-600 border border-stone-300 hover:bg-stone-100">Health/SEL: Processing Pain</button>
+                <button onclick="switchTab('tab-art')" id="btn-tab-art" class="px-6 py-2 rounded-full font-medium text-sm transition-all duration-200 bg-white text-stone-600 border border-stone-300 hover:bg-stone-100">Art: Memory Objects</button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 md:p-10 min-h-[400px]">
+                <div id="tab-core" class="tab-content active">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mr-3">Social Studies</span>
+                        <span class="text-sm text-stone-500">Grades 8-12 | 45-60 min</span>
+                    </div>
+                    <h4 class="text-2xl font-serif font-bold text-stone-900 mb-2">Dignity in Wartime</h4>
+                    <p class="text-stone-600 font-serif italic mb-6">Essential Question: Can compassion survive total war?</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h5 class="font-bold text-stone-800 mb-2">Module Overview</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed mb-4">This foundational lesson shifts the focus from battlefield strategy to human choices. Students analyze oral history to distinguish between the external pressures of the military system and Otis's personal moral agency.</p>
+                            <h5 class="font-bold text-stone-800 mb-2">Key Activity</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed"><strong>The T-Chart Analysis:</strong> While viewing, students track <em>"External Norms"</em> vs. <em>"Otis's Choices"</em>.</p>
+                        </div>
+                        <div class="bg-stone-50 p-5 rounded-lg border border-stone-200 flex flex-col justify-center">
+                            <h5 class="font-bold text-stone-800 mb-3 text-sm uppercase tracking-wider">Assessment Target</h5>
+                            <p class="text-stone-700 text-sm italic">"Identify one single moment in Otis’s story that best proves that war does not erase moral choice, and explain why."</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-ela" class="tab-content">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mr-3">Advanced ELA / Ethics</span>
+                        <span class="text-sm text-stone-500">Grades 9-12 | 50-60 min</span>
+                    </div>
+                    <h4 class="text-2xl font-serif font-bold text-stone-900 mb-2">What Choices Remain?</h4>
+                    <p class="text-stone-600 font-serif italic mb-6">Essential Question: How do we maintain individual values within a collective system of violence?</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h5 class="font-bold text-stone-800 mb-2">Module Overview</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed mb-4">Built for discussion-heavy classrooms. This variant examines the concept of the "Enemy" and how Otis's refusal to take trophies dismantles dehumanization.</p>
+                            <h5 class="font-bold text-stone-800 mb-2">Key Activity</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed"><strong>Four Moments Analysis:</strong> Small groups analyze the Food, Comb, Flower, and Philosophy to determine resistance to systemic pressure.</p>
+                        </div>
+                        <div class="bg-stone-50 p-5 rounded-lg border border-stone-200 flex flex-col justify-center">
+                            <h5 class="font-bold text-stone-800 mb-3 text-sm uppercase tracking-wider text-center">Inquiry Flow</h5>
+                            <div class="flex justify-between items-center bg-white p-3 rounded border border-stone-200 text-xs font-semibold text-stone-700">
+                                <span>System</span> &rarr; <span>Pressure</span> &rarr; <span>Choice</span> &rarr; <span>Meaning</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-sel" class="tab-content">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mr-3">Health / SEL</span>
+                        <span class="text-sm text-stone-500">Grades 8-12 | 40-50 min</span>
+                    </div>
+                    <h4 class="text-2xl font-serif font-bold text-stone-900 mb-2">How Not to Let Pain Choose</h4>
+                    <p class="text-stone-600 font-serif italic mb-6">Essential Question: How can someone experience violence without turning that violence outward?</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h5 class="font-bold text-stone-800 mb-2">Module Overview</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed mb-4">A trauma-informed approach focused on resilience. Frames Otis’s story as emotional discipline and kindness as a proactive survival tool.</p>
+                            <h5 class="font-bold text-stone-800 mb-2">Key Activity</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed"><strong>The Value Map:</strong> Connect actions from the film to core values (restraint, compassion), mapping long-term impact.</p>
+                        </div>
+                        <div class="bg-stone-50 p-5 rounded-lg border border-stone-200 flex flex-col justify-center">
+                            <p class="text-stone-700 text-sm italic text-center">"What does ‘doing the right thing’ mean when life is harsh, unfair, or painful?"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-art" class="tab-content">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mr-3">Art / English</span>
+                        <span class="text-sm text-stone-500">Grades 8-12 | 45-60 min</span>
+                    </div>
+                    <h4 class="text-2xl font-serif font-bold text-stone-900 mb-2">Memory Objects</h4>
+                    <p class="text-stone-600 font-serif italic mb-6">Essential Question: How can ordinary objects carry moral meaning?</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h5 class="font-bold text-stone-800 mb-2">Module Overview</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed mb-4">Focuses on symbolism. Students explore how simple objects hold memory and dignity more powerfully than abstract speeches.</p>
+                            <h5 class="font-bold text-stone-800 mb-2">Key Activity</h5>
+                            <p class="text-stone-600 text-sm leading-relaxed"><strong>Creative Response:</strong> Essay, poem, or mixed-media piece titled <em>"An Object That Carries a Person,"</em> with an artist's statement.</p>
+                        </div>
+                        <div class="bg-stone-50 p-5 rounded-lg border border-stone-200 flex flex-col items-center justify-center">
+                            <p class="text-stone-700 text-xs font-semibold text-center uppercase tracking-widest">Symbolic Pivot</p>
+                            <p class="text-stone-500 text-xs text-center">From Combat Wallpaper to Ethical Vessels</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-stone-900 py-12 text-center border-t border-amber-800">
+        <p class="text-stone-400 text-sm font-serif italic mb-2">"True victory is refusing to lose your soul."</p>
+        <p class="text-stone-500 text-xs uppercase tracking-widest">Internal Production Dashboard & Visual Report - Eternal Salute Archive</p>
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            const btns = ['btn-tab-core', 'btn-tab-ela', 'btn-tab-sel', 'btn-tab-art'];
+            btns.forEach(id => {
+                const btn = document.getElementById(id);
+                btn.classList.remove('bg-amber-700', 'text-white', 'shadow-md');
+                btn.classList.add('bg-white', 'text-stone-600', 'hover:bg-stone-100');
+            });
+            document.getElementById(tabId).classList.add('active');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('bg-white', 'text-stone-600', 'hover:bg-stone-100');
+            activeBtn.classList.add('bg-amber-700', 'text-white', 'shadow-md');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.remove('active'));
+            document.body.style.overflow = 'auto';
+        }
+
+        function closeModalOnOverlay(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('arcChart').getContext('2d');
+            const labels = ['1. Hook', '2. Machinery', '3. The Comb', '4. Tension', '5. The Flower', '6. Philosophy'];
+            const tensionData = [20, 95, 30, 90, 45, 10];
+            const compassionData = [50, 10, 98, 20, 100, 90];
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Systemic Brutality',
+                            data: tensionData,
+                            borderColor: '#44403c',
+                            backgroundColor: 'rgba(68, 64, 60, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            pointBackgroundColor: '#44403c'
+                        },
+                        {
+                            label: 'Individual Humanity',
+                            data: compassionData,
+                            borderColor: '#b45309',
+                            backgroundColor: 'rgba(180, 83, 9, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointBackgroundColor: '#b45309',
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: "'Inter'" },
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 110,
+                            grid: { color: '#e7e5e4', drawBorder: false },
+                            ticks: { display: false }
+                        },
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: {
+                                font: { family: "'Inter'", size: 11 },
+                                color: '#78716c'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
